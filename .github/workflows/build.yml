@@ -24,7 +24,7 @@ jobs:
         run: npm install
 
       - name: Build installer
-        run: npm run build
+        run: npm run build -- --publish never
         env:
           ELECTRON_GET_TIMEOUT: '120000'
 
@@ -41,3 +41,5 @@ jobs:
           name: FieldLinkKiosk Installer
           files: dist/*.exe
           make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
