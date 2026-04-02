@@ -43,3 +43,11 @@ jobs:
           make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Invalidate server installer cache
+        if: success()
+        run: |
+          curl -s -X POST "${{ secrets.FIELDLINK_SERVER_URL }}/api/kiosk/installer/invalidate" \
+            -H "x-webhook-secret: ${{ secrets.KIOSK_WEBHOOK_SECRET }}" \
+            -H "Content-Type: application/json" || echo "Cache invalidation skipped (server unreachable)"
+        shell: bash
