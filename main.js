@@ -2,28 +2,44 @@ const { app, BrowserWindow, globalShortcut } = require('electron');
 const path = require('path');
 const fs   = require('fs');
 
-// Load config from same directory as the exe (works both in dev and packaged)
-const configPath = app.isPackaged
-  ? path.join(process.resourcesPath, 'config.json')
-  : path.join(__dirname, 'config.json');
-
-let config = { kioskUrl: 'https://fieldlinkmissions.com', width: 1920, height: 1080 };
-try {
-  config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-} catch (e) {
-  console.error('Could not load config.json:', e.message);
+// Config search order:
+// 1. Same folder as the exe (C:\Program Files\FieldLinkKiosk\config.json) — set by INSTALL.bat
+// 2. Resources folder inside the asar package — fallback
+function loadConfig() {
+  const candidates = [
+    path.join(path.dirname(app.getPath('exe')), 'config.json'),
+    app.isPackaged
+      ? path.join(process.resourcesPath, 'config.json')
+      : path.join(__dirname, 'config.json'),
+  ];
+  for (const p of candidates) {
+    try {
+      if (fs.existsSync(p)) {
+        return JSON.parse(fs.readFileSync(p, 'utf8'));
+      }
+    } catch (e) {}
+  }
+  return null;
 }
 
 app.on('ready', () => {
+  const config = loadConfig();
+
   const win = new BrowserWindow({
-    width:  config.width  || 1920,
-    height: config.height || 1080,
+    width:  config?.width  || 1920,
+    height: config?.height || 1080,
     fullscreen: true,
     kiosk: true,
     webPreferences: { nodeIntegration: false, contextIsolation: true },
     frame: false,
     autoHideMenuBar: true,
   });
+
+  if (!config || !config.kioskUrl) {
+    // No config found — show error page
+    win.loadURL('data:text/html,<h1 style="font-family:sans-serif;color:red;padding:40px">config.json not found.<br>Please run INSTALL.bat again.</h1>');
+    return;
+  }
 
   win.loadURL(config.kioskUrl);
 

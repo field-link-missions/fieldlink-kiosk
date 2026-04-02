@@ -20,17 +20,16 @@
       "executableName": "FieldLinkKiosk"
     },
     "nsis": {
-      "oneClick": true,
+      "oneClick": false,
       "perMachine": true,
       "allowElevation": true,
+      "allowToChangeInstallationDirectory": false,
       "createDesktopShortcut": false,
       "createStartMenuShortcut": false,
+      "runAfterFinish": false,
       "installerIcon": null,
       "uninstallerIcon": null
     },
-    "extraResources": [
-      { "from": "config.json", "to": "config.json" }
-    ],
     "files": ["main.js"],
     "asar": true
   }
