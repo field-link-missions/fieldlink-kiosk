@@ -45,8 +45,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Invalidate server installer cache
-        if: success() && secrets.FIELDLINK_SERVER_URL != ''
+        if: success()
         run: |
+          if (-not $env:SERVER_URL) { Write-Host "No SERVER_URL configured, skipping cache invalidation."; exit 0 }
           try {
             Invoke-WebRequest -Uri "$env:SERVER_URL/api/kiosk/installer/invalidate" `
               -Method POST `

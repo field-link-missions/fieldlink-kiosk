@@ -41,13 +41,34 @@ app.on('ready', () => {
     return;
   }
 
-  win.loadURL(config.kioskUrl);
+  const kioskUrl = config.kioskUrl;
 
-  const kioskOrigin = new URL(config.kioskUrl).origin;
+  win.loadURL(kioskUrl);
+
+  const kioskOrigin = new URL(kioskUrl).origin;
   win.webContents.on('will-navigate', (e, url) => {
     if (!url.startsWith(kioskOrigin)) e.preventDefault();
   });
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+
+  // Heartbeat — reload on any non-200 response (catches 502, 503, etc.)
+  // A 502 loads "successfully" as far as Electron is concerned so we
+  // explicitly poll to detect and recover from server-side errors.
+  function startHeartbeat(intervalMs) {
+    setInterval(async () => {
+      try {
+        const res = await fetch(kioskUrl, { cache: 'no-store' });
+        if (!res.ok) {
+          console.log(`[Heartbeat] Got ${res.status} — reloading...`);
+          win.loadURL(kioskUrl);
+        }
+      } catch (e) {
+        console.log('[Heartbeat] Fetch failed — reloading...', e.message);
+        win.loadURL(kioskUrl);
+      }
+    }, intervalMs);
+  }
+  startHeartbeat(30000);
 
   globalShortcut.register('CommandOrControl+Shift+Q', () => {
     globalShortcut.unregisterAll();
